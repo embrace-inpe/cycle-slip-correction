@@ -22,7 +22,7 @@ register_matplotlib_converters()
 from scipy.signal import find_peaks
 
 REQUIRED_VERSION = 3.01
-CONSTELLATIONS = ['G']
+CONSTELLATIONS = ['G', 'R']
 COLUMNS_IN_RINEX = {'3.03': {'G': {'L1': 'L1C', 'L2': 'L2W', 'C1': 'C1C', 'P1': 'C1W', 'P2': 'C2W'},
                              'R': {'L1': 'L1C', 'L2': 'L2C', 'C1': 'C1C', 'P1': 'C1P', 'P2': 'C2P'}
                              },
@@ -56,13 +56,23 @@ class Utils:
         return array
 
     @staticmethod
-    def plot_graphs_2(array, prn):
-        fig = plt.figure()
+    def plot_graphs_2(array_original, array, diff_, prn):
+        fig, axs = plt.subplots(3, 1)
 
-        plt.plot(array)
-        plt.title(prn)
-        plt.ylabel('[rTEC]')
-        plt.grid(True)
+        axs[0].plot(array_original)
+        axs[0].set_title(prn)
+        axs[0].set_ylabel('rTEC-orig')
+        axs[0].grid(True)
+
+        axs[1].plot(array)
+        axs[1].set_title(prn)
+        axs[1].set_ylabel('rTEC-corr')
+        axs[1].grid(True)
+
+        axs[2].plot(diff_)
+        axs[2].set_title("diff")
+        axs[2].set_ylabel('diff')
+        axs[2].grid(True)
 
         fig.savefig(prn + "_corrected.pdf")
 
@@ -246,7 +256,7 @@ class CycleSlip:
 
         return indexes_before
 
-    def _correct(self, obs, rtec, mwlc, f1, factor_2, index, index_nan, prn):
+    def _correct(self, l1, l2, rtec, mwlc, f1, factor_2, index, index_nan):
         """
         As a result of the detection of inconsistencies, this method compensate the irregularities on L1 and L2
         observations, directly at the rinex (obs variable)
@@ -260,33 +270,18 @@ class CycleSlip:
         :param index_nan: The point of inconsistence (array with NaN values)
         :return: The corrected observation file and the respective relative TEC
         """
-        requiried_version = str(REQUIRED_VERSION)
-        cols_var = COLUMNS_IN_RINEX[requiried_version]
-
         diff_rtec = rtec[index] - rtec[index-1]
         diff_mwlc = mwlc[index] - mwlc[index-1]
 
-        var1 = diff_mwlc * self.C
-        var2 = var1 / f1
-        diff_2 = round((diff_rtec - var2) * factor_2)
+        var_1 = diff_mwlc * self.C
+        var_2 = var_1 / f1
+        diff_2 = round((diff_rtec - var_2) * factor_2)
         diff_1 = diff_2 + round(diff_mwlc)
 
-        # cor_r_1 = obs[cols_var[prn[0:1]]['L1']].sel(sv=prn).values[index] - diff_1
-        # cor_r_2 = obs[cols_var[prn[0:1]]['L2']].sel(sv=prn).values[index] - diff_2
+        l1[index_nan:len(l1)] -= diff_1
+        l2[index_nan:len(l2)] -= diff_2
 
-        # c1 = obs[cols_var[prn[0:1]]['C1']].sel(sv=prn).values[index]
-        # p2 = obs[cols_var[prn[0:1]]['P2']].sel(sv=prn).values[index]
-
-        # rtec[index] = (cor_r_1 / f1 - cor_r_2 / f2) * self.C
-        # mwlc[index] = (cor_r_1 - cor_r_2) - (f1 * c1 + f2 * p2) * factor_1
-
-        limit_correct = len(obs[cols_var[prn[0:1]]['L1']].sel(sv=prn).values)
-
-        for k in range(index_nan, limit_correct):
-            obs[cols_var[prn[0:1]]['L1']].sel(sv=prn).values[k] -= diff_1
-            obs[cols_var[prn[0:1]]['L2']].sel(sv=prn).values[k] -= diff_2
-
-        return obs
+        return rtec, l1, l2
 
     def _which_not_nan_pos(self, array1, array2, i):
         """
@@ -302,7 +297,7 @@ class CycleSlip:
 
         return i_nan
 
-    def _detect_and_correct_cycle_slip(self, obs, hdr, prn, year, month, doy):
+    def _detect_and_correct_cycle_slip(self, obs_time, f1, f2, factor_1, factor_2, l1, l2, c1, p2, prn):
         """
 
         :param obs:
@@ -315,31 +310,9 @@ class CycleSlip:
         """
         j_start = 0
 
-        requiried_version = str(hdr.get('version'))
-        cols_var = COLUMNS_IN_RINEX[requiried_version]
-
-        l1 = np.array(obs[cols_var[prn[0:1]]['L1']].sel(sv=prn).values)
-        l2 = np.array(obs[cols_var[prn[0:1]]['L2']].sel(sv=prn).values)
-        c1 = np.array(obs[cols_var[prn[0:1]]['C1']].sel(sv=prn).values)
-        p2 = np.array(obs[cols_var[prn[0:1]]['P2']].sel(sv=prn).values)
-
-        if prn[0:1] == 'R':
-            factor_glonass = self._prepare_factor(hdr, year, month, doy)
-
-            f1 = factor_glonass[prn[1:]][0]
-            f2 = factor_glonass[prn[1:]][1]
-            factor_1 = factor_glonass[prn[1:]][2]
-            factor_2 = factor_glonass[prn[1:]][3]
-        elif prn[0:1] == 'G':
-            f1 = self.F1
-            f2 = self.F2
-            factor_1 = self.factor_1
-            factor_2 = self.factor_2
-
         rtec = ((l1 / f1) - (l2 / f2)) * self.C
         mwlc = (l1 - l2) - (f1 * c1 + f2 * p2) * factor_1
 
-        obs_time = Utils.array_timestamp_to_datetime(obs.time)
         not_nan_pos = np.where(~np.isnan(rtec))
         not_nan_pos = np.array(not_nan_pos).flatten().tolist()
         not_nan_time = [obs_time[x] for x in not_nan_pos]
@@ -364,7 +337,7 @@ class CycleSlip:
             if i in indexes:
                 logging.info(">>>>>> Indexes match ({}): correcting cycle-slips...".format(i, prn))
                 i_nan = self._which_not_nan_pos(rtec, rtec_not_nan, i)
-                obs = self._correct(obs, rtec_not_nan, mwlc_not_nan, f1, factor_2, i, i_nan, prn)
+                l1, l2 = self._correct(l1, l2, rtec_not_nan, mwlc_not_nan, f1, factor_2, i, i_nan)
 
             if i - j_start + 1 >= 12:
                 add_tec = 0
@@ -386,57 +359,9 @@ class CycleSlip:
 
             if not pmin_tec < diff_rtec and diff_rtec <= pmax_tec:
                 i_nan = self._which_not_nan_pos(rtec, rtec_not_nan, i)
-                obs = self._correct(obs, rtec_not_nan, mwlc_not_nan, f1, factor_2, i, i_nan, prn)
+                l1, l2 = self._correct(l1, l2, rtec_not_nan, mwlc_not_nan, f1, factor_2, i, i_nan)
 
-        # nan_pos = np.where(np.isnan(rtec))
-        # nan_pos = np.array(nan_pos).flatten().tolist()
-        # np_zeros = np.zeros(len(nan_pos))
-        # rtec_not_nan = np.concatenate((rtec_not_nan, np_zeros), axis=0)
-        # rtec_not_nan[nan_pos] = np.nan
-
-        # TECNICA POR DERIVADA E DETECCAO DE PICOS ----------------------
-        # indexes = self._detect(r_tec, prn)
-        #
-        # obs_time = Utils.array_timestamp_to_datetime(obs.time)
-        # not_nan_pos = np.where(~np.isnan(r_tec))
-        # not_nan_pos = np.array(not_nan_pos).flatten().tolist()
-        # not_nan_time = [obs_time[x] for x in not_nan_pos]
-
-        # for item in indexes:
-        #     pos1 = not_nan_pos.index(item)
-        #     pos2 = pos1 + 1
-        #
-        #     t1 = not_nan_time[pos1]
-        #     t2 = not_nan_time[pos2]
-        #
-        #     if t2 - t1 > datetime.timedelta(minutes=15):
-        #         indexes = np.delete(indexes.index(item))
-
-        # if len(indexes) != 0:
-        #     logging.info(">>>>>> Correcting cycle slip for PRN {}".format(prn))
-        #     for i in range(len(r_tec)):
-        #         if i-item+1 >= 12:
-        #             add_tec = 0
-        #             add_tec_2 = 0
-        #
-        #             for jj in range(9):
-        #                 add_tec = add_tec + r_tec[i-jj] - r_tec[i-jj-1]
-        #                 add_tec_2 = add_tec_2 + pow(r_tec[i-jj] - r_tec[i-jj-1], 2)
-        #
-        #             p_mean = add_tec / 10
-        #             p_dev = np.maximum(np.sqrt(add_tec_2 / 10 - pow(p_mean, 2)), self.DIFF_TEC_MAX)
-        #         else:
-        #             p_mean = 0
-        #             p_dev = self.DIFF_TEC_MAX * 2.5
-        #
-        #         pmin_tec = p_mean - p_dev * 2.75
-        #         pmax_tec = p_mean + p_dev * 2.75
-        #         diff_rtec = r_tec[i] - r_tec[i-1]
-        #
-        #         if not pmin_tec < diff_rtec and diff_rtec <= pmax_tec:
-        #             r_tec, obs = self._correct(obs, r_tec, mwlc, factor_glonass, i, prn)
-
-        return obs
+        return l1, l2
 
     def _cycle_slip_analysis(self, hdr, obs, year, month, doy):
         """
@@ -449,26 +374,37 @@ class CycleSlip:
         :return:
         """
         prns = obs.sv.values
+        obs_time = Utils.array_timestamp_to_datetime(obs.time)
 
         requiried_version = str(hdr.get('version'))
         cols_var = COLUMNS_IN_RINEX[requiried_version]
 
         for prn in prns:
-            obs = self._detect_and_correct_cycle_slip(obs, hdr, prn, year, month, doy)
-
             l1 = np.array(obs[cols_var[prn[0:1]]['L1']].sel(sv=prn).values)
             l2 = np.array(obs[cols_var[prn[0:1]]['L2']].sel(sv=prn).values)
+            c1 = np.array(obs[cols_var[prn[0:1]]['C1']].sel(sv=prn).values)
+            p2 = np.array(obs[cols_var[prn[0:1]]['P2']].sel(sv=prn).values)
 
             if prn[0:1] == 'R':
                 factor_glonass = self._prepare_factor(hdr, year, month, doy)
                 f1 = factor_glonass[prn[1:]][0]
                 f2 = factor_glonass[prn[1:]][1]
+                factor_1 = factor_glonass[prn[1:]][2]
+                factor_2 = factor_glonass[prn[1:]][3]
             elif prn[0:1] == 'G':
                 f1 = self.F1
                 f2 = self.F2
+                factor_1 = self.factor_1
+                factor_2 = self.factor_2
 
-            rtec_new = ((l1 / f1) - (l2 / f2)) * self.C
-            Utils.plot_graphs_2(rtec_new, prn)
+            l1_new, l2_new = self._detect_and_correct_cycle_slip(obs_time, f1, f2, factor_1, factor_2, l1, l2, c1, p2, prn)
+
+            rtec = ((l1 / f1) - (l2 / f2)) * self.C
+            rtec_new = ((l1_new / f1) - (l2_new / f2)) * self.C
+
+            diff_ = rtec - rtec_new
+
+            Utils.plot_graphs_2(rtec, rtec_new, diff_, prn)
 
         return obs
 
@@ -485,6 +421,7 @@ class CycleSlip:
             start = time.perf_counter()
 
             complete_path = os.path.join(self.folder, file)
+            complete_path_out = os.path.join(self.output_folder, file)
 
             logging.info(">>>> Reading rinex: " + file)
             hdr = gr.rinexheader(complete_path)
@@ -498,7 +435,7 @@ class CycleSlip:
                 year, month, doy = Utils.setup_rinex_name(file)
                 obs = self._cycle_slip_analysis(hdr, obs, year, month, doy)
 
-                # TODO: SAVE NEW obs RINEX
+                # TODO: SAVE NEW obs RINEX ?
             else:
                 logging.info(">>>>>> Rinex version {}. This code comprises the 3.01+ rinex version.".format(version))
                 continue
