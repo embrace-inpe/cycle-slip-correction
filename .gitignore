@@ -1,6 +1,0 @@
-*.log
-*.pdf
-.idea/
-.venv/
-__pycache__/
-
