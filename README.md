@@ -1,8 +1,6 @@
 <img src="sw_logo.png" width="64">
 
 # GNSS Cycle-Slip Correction
-
-#### GNSS Cycle-Slip Correction
 Aplicação [Python](https://www.python.org/) para análise e correção perda de ciclos (_cycle-slip_) presentes em 
 dados GNSS (rinex). 
 
@@ -20,6 +18,8 @@ direcionados para o tratamento das perdas de ciclos.
 [...]
 
 Mônico, J. F. G. et al. **AVALIAÇÃO DE ESTRATÉGIAS DE DETECÇÃO E CORREÇÃO DE PERDAS DE CICLOS NA PORTADORA GPS L1**. Bol. Ciênc. Geod., sec. Artigos, Curitiba, v. 15, no 2, p.178-193, abr-jun, 2009.
+
+***
 
 #### Contribuidores envolvidos
 ###### Departamento de Ciências Espaciais e Atmosféricas (CEA-II) - INPE
