@@ -2,19 +2,36 @@
 
 # GNSS Cycle-Slip Correction
 
+#### GNSS Cycle-Slip Correction
 Aplicação [Python](https://www.python.org/) para análise e correção perda de ciclos (_cycle-slip_) presentes em 
 dados GNSS (rinex). 
 
-*Total Eletron Content* ou **TEC**, é um importante descritor quantitativo, consistindo no número 
-total de elétrons integrados entre dois pontos, ao longo de um tubo de um metro quadrado (transecto), ou seja, a 
-densidade numérica colunar de elétrons. Frequentemente chamada de unidade TEC, definida como TECU, com valor aproximado
-.
+#### Introdução
+O posicionamento com GPS está sujeito a várias fontes de erros com origens tanto nos satélites, quanto nos receptores, como também na propagação do sinal
+entre o satélite e o receptor. É um assunto amplamente discutido por vários autores e entre eles, cita-se, por exemplo: Monico (2008); Seeber (2003). Tais erros devem
+ser considerados no processo de ajustamento para se possa obter uma correta resolução das ambigüidades da fase, e conseqüentemente um posicionamento com
+alta acurácia, alcançando poucos milímetros. 
 
-[EMBRACE](http://www2.inpe.br/climaespacial/portal/pt/).
+Em linhas de base curtas, o posicionamento relativo com receptores de apenas uma freqüência (portadora L1 e código C/A) tem sido uma estratégia muito
+utilizada para atenuar os erros comuns às estações envolvidas. Porém, o multicaminho e as perdas de ciclos não são reduzidos no posicionamento relativo,
+pois dependem de condições particulares de cada estação. Portanto, esses tipos de erros devem receber tratamento específico. Neste artigo os esforços serão
+direcionados para o tratamento das perdas de ciclos.
+
+[...]
+
+Mônico, J. F. G. et al. **AVALIAÇÃO DE ESTRATÉGIAS DE DETECÇÃO E CORREÇÃO DE PERDAS DE CICLOS NA PORTADORA GPS L1**. Bol. Ciênc. Geod., sec. Artigos, Curitiba, v. 15, no 2, p.178-193, abr-jun, 2009.
+
+#### Contribuidores envolvidos
+###### Departamento de Ciências Espaciais e Atmosféricas (CEA-II) - INPE
+Dr. Cristiano Max Wrasse (Pesquisador) [_cristiano.wrasse@inpe.br_]  
+Dr. Cosme A. O. Barros [_cosme.figueiredo@inpe.br_]  
+
+###### Desenvolvimento - EMBRACE/INPE
+Dr. Rodolfo G. Lotte [_rodolfo.lotte@inpe.br_]
 
 ***
 
-#### AMBIENTE DE DESENVOLVIMENTO:
+#### Ambiente de desenvolvimento:
 
 Após clonar o repositório [git](https://github.com/embrace-inpe/cycle-slip-correction) para um diretório em sua máquina, 
 siga as instruções à seguir para executar o programa.
@@ -93,6 +110,6 @@ Monitoramento Brasileiro Clima Espacial [(EMBRACE/INPE)](http://www2.inpe.br/cli
 ou que novos formatos de arquivos e constelações GNSS venha a surgir, é necessário que se incorpore novas 
 versões do código. 
 
-Portanto, para contribuir com o projeto, leia atentamente procedimentos de **cópia** e **_pull-requests** de projetos, 
+Portanto, para contribuir com o projeto, leia atentamente procedimentos de **cópia** e **_pull-requests_** de projetos, 
 por exemplo, neste [link](https://leportella.com/pt-br/2017/04/17/como-contribuir-com-open-source.html) ou 
 [neste](https://www.digitalocean.com/community/tutorials/como-criar-um-pull-request-no-github-pt).
