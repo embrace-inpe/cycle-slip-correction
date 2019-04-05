@@ -377,8 +377,8 @@ class CycleSlip:
             rtec_return, l1_new, l2_new = self._detect_and_correct_cycle_slip(obs_time, l1, l2, c1, p2, f1, f2,
                                                                               factor_1, factor_2, prn)
 
-            obs[cols_var[prn[0:1]]['L1']].sel(sv=prn).values = l1
-            obs[cols_var[prn[0:1]]['L2']].sel(sv=prn).values = l2
+            obs[cols_var[prn[0:1]]['L1']].sel(sv=prn).values = l1_new
+            obs[cols_var[prn[0:1]]['L2']].sel(sv=prn).values = l2_new
 
             rtec = ((l1 / f1) - (l2 / f2)) * settings.C
             rtec_new = ((l1_new / f1) - (l2_new / f2)) * settings.C
