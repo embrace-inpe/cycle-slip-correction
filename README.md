@@ -38,10 +38,10 @@ siga as instruções à seguir para executar o programa.
 
 1. [Ambiente virtual Python `.venv`](#1-Criar-ambiente-Python-isolado-com-a-lib-virtualenv)
 2. [Instalação de dependências `pip`](#2-instalando-dependncias)
-3. [Versões do `RINEX`](#3-execuo-do-programa)
-4. [Configurando as constantes](#4-execuo-do-programa)
+3. [Versões do `RINEX`](#3-verses-do-rinex)
+4. [Configurando as constantes](#4-configurando-as-constantes)
 5. [Execução do programa `main.py`](#5-execuo-do-programa)
-6. [Como contribuir com o projeto?]()
+6. [Como contribuir com o projeto?](#6-como-contribuir-com-o-projeto)
 
 #### 1. Criar ambiente Python isolado com a lib virtualenv
 Navegar até o diretório `cycle-slip-correction/` e criar o ambiente isolado através do comando:
