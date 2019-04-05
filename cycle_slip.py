@@ -23,6 +23,7 @@ from scipy.signal import find_peaks
 
 import settings as settings
 
+
 class Utils:
     """
     Useful methods for Cycle-Slip correcting
@@ -243,7 +244,6 @@ class CycleSlip:
         :param c1: C1 measures (with NaN values)
         :param p2: P2 measures (with NaN values)
         :param rtec_not_nan: relative TEC (no NaNs)
-        :param prn: The respective PRN
         :param mlwc: Not NaN MLWC factor
         :param f1: F1 frequency (either GPS or GLONASS)
         :param f2: F2 frequency (either GPS or GLONASS)
@@ -289,8 +289,13 @@ class CycleSlip:
         """
         j_start = 0
 
-        rtec_nan = ((l1 / f1) - (l2 / f2)) * settings.C
-        mwlc_nan = (l1 - l2) - (f1 * c1 + f2 * p2) * factor_1
+        l1_2 = l1.copy()
+        l2_2 = l2.copy()
+        c1_2 = c1.copy()
+        p2_2 = p2.copy()
+
+        rtec_nan = ((l1_2 / f1) - (l2_2 / f2)) * settings.C
+        mwlc_nan = (l1_2 - l2_2) - (f1 * c1_2 + f2 * p2_2) * factor_1
 
         not_nan_pos = np.where(~np.isnan(rtec_nan))
         not_nan_pos = np.array(not_nan_pos).flatten().tolist()
@@ -304,8 +309,8 @@ class CycleSlip:
 
         logging.info(">>>> Finding discontinuities and correcting cycle-slips (PRN {})...".format(prn))
         for i in range(1, len(not_nan_time)):
-            rtec_nan[i] = ((l1[i] / f1) - (l2[i] / f2)) * settings.C
-            mwlc_nan[i] = (l1[i] - l2[i]) - (f1 * c1[i] + f2 * p2[i]) * factor_1
+            rtec_nan[i] = ((l1_2[i] / f1) - (l2_2[i] / f2)) * settings.C
+            mwlc_nan[i] = (l1_2[i] - l2_2[i]) - (f1 * c1_2[i] + f2 * p2_2[i]) * factor_1
 
             t1 = not_nan_time[i-1]
             t2 = not_nan_time[i]
@@ -316,7 +321,7 @@ class CycleSlip:
 
             if i in indexes:
                 logging.info(">>>>>> Indexes match ({}): correcting cycle-slips...".format(i, prn))
-                rtec_nan, l1, l2 = self._correct(l1, l2, c1, p2, rtec_nan, mwlc_nan, f1, f2, factor_1, factor_2, i)
+                rtec_nan, l1_2, l2_2 = self._correct(l1_2, l2_2, c1_2, p2_2, rtec_nan, mwlc_nan, f1, f2, factor_1, factor_2, i)
 
             if i - j_start + 1 >= 12:
                 add_tec = 0
@@ -332,14 +337,14 @@ class CycleSlip:
                 p_mean = 0
                 p_dev = settings.DIFF_TEC_MAX * 2.5
 
-            pmin_tec = p_mean - p_dev * 2.75
-            pmax_tec = p_mean + p_dev * 2.75
+            pmin_tec = p_mean - p_dev * 2
+            pmax_tec = p_mean + p_dev * 2
             diff_rtec = rtec_nan[i] - rtec_nan[i-1]
 
             if not pmin_tec < diff_rtec and diff_rtec <= pmax_tec:
-                rtec_nan, l1, l2 = self._correct(l1, l2, c1, p2, rtec_nan, mwlc_nan, f1, f2, factor_1, factor_2, i)
+                rtec_nan, l1_2, l2_2 = self._correct(l1_2, l2_2, c1_2, p2_2, rtec_nan, mwlc_nan, f1, f2, factor_1, factor_2, i)
 
-        return rtec_nan, l1, l2
+        return rtec_nan, l1_2, l2_2
 
     def _cycle_slip_analysis(self, hdr, obs, year, month, doy):
         """

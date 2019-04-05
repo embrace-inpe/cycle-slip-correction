@@ -41,7 +41,8 @@ siga as instruções à seguir para executar o programa.
 3. [Versões do `RINEX`](#3-Verses-do-rinex)
 4. [Configurando constantes](#4-Configurando-constantes)
 5. [Execução do programa `main.py`](#5-Execuo-do-programa)
-6. [Como contribuir com o projeto?](#6-Como-contribuir-com-o-projeto)
+6. [Performance](#6-Performance)
+7. [Como contribuir com o projeto?](#7-Como-contribuir-com-o-projeto)
 
 #### 1. Criar ambiente Python isolado com a lib virtualenv
 Navegar até o diretório `cycle-slip-correction/` e criar o ambiente isolado através do comando:
@@ -104,7 +105,10 @@ Se tudo correr bem, a saída do programa deve imprimir gradualmente, mensagens s
 [...]
 ```
 
-#### 5. Como contribuir com o projeto
+#### 6. Performance
+
+
+#### 7. Como contribuir com o projeto
 O projeto de correção de _cycle-slip_ foi realizado como parte de outro projeto realizado dentro do Programa 
 Monitoramento Brasileiro Clima Espacial [(EMBRACE/INPE)](http://www2.inpe.br/climaespacial/portal/pt/), em São José dos Campos, São Paulo. A medida que se utiliza, 
 ou que novos formatos de arquivos e constelações GNSS venha a surgir, é necessário que se incorpore novas 
