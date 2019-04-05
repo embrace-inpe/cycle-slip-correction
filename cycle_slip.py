@@ -21,19 +21,7 @@ register_matplotlib_converters()
 
 from scipy.signal import find_peaks
 
-REQUIRED_VERSION = 3.01
-CONSTELLATIONS = ['G', 'R']
-COLUMNS_IN_RINEX = {'3.03': {'G': {'L1': 'L1C', 'L2': 'L2W', 'C1': 'C1C', 'P1': 'C1W', 'P2': 'C2W'},
-                             'R': {'L1': 'L1C', 'L2': 'L2C', 'C1': 'C1C', 'P1': 'C1P', 'P2': 'C2P'}
-                             },
-                    '3.02': {'G': {'L1': 'L1', 'L2': 'L2', 'C1': 'C1C', 'P1': 'C1W', 'P2': 'C2W'},
-                             'R': {'L1': 'L1', 'L2': 'L2', 'C1': 'C1C', 'P1': 'C1P', 'P2': 'C2P'}
-                             },
-                    '3.01': {'G': {'L1': 'L1', 'L2': 'L2', 'C1': 'C1C', 'P1': 'C1W', 'P2': 'C2W'},
-                             'R': {'L1': 'L1', 'L2': 'L2', 'C1': 'C1C', 'P1': 'C1P', 'P2': 'C2P'}
-                             }
-                    }
-
+import settings as settings
 
 class Utils:
     """
@@ -151,8 +139,8 @@ class Utils:
         :return: The columns to load in rinex
         """
         columns_to_be_load = []
-        requiried_version = str(REQUIRED_VERSION)
-        dict_list_cols = list(COLUMNS_IN_RINEX[requiried_version].values())
+        requiried_version = str(settings.REQUIRED_VERSION)
+        dict_list_cols = list(settings.COLUMNS_IN_RINEX[requiried_version].values())
 
         for constellation in dict_list_cols:
             for item in constellation.values():
@@ -177,17 +165,6 @@ class CycleSlip:
                 End
             End
     """
-    A = 40.3
-    TECU = 1.0e16
-    C = 299792458
-    F1 = 1.57542e9
-    F2 = 1.22760e9
-    factor_1 = (F1 - F2) / (F1 + F2) / C
-    factor_2 = (F1 * F2) / (F2 - F1) / C
-    DIFF_TEC_MAX = 0.05
-    LIMIT_STD = 2
-    plot_it = False
-
     def __init__(self, folder, output_folder):
         self.folder = folder
         self.output_folder = output_folder
@@ -229,11 +206,12 @@ class CycleSlip:
         effect is present, a peak on the fourth derivative occurs. The index of this peak is store on "indexes"
         variable and then returned
 
-        :param rtec: The relative TEC (no NaN)
-        :return: The rtec indexes where the "degree" effect is presented
+        :param rtec: The relative TEC (with NaNs)
+        :param rtec_no_nan: The relative TEC (no NaNs)
+        :return: The rtec indexes (in the array with NaN values) where the "degree" effect is presented
         """
         fourth_der_not_nan = np.diff(rtec_no_nan, n=4)
-        std_fourth_der_not_nan = np.nanstd(fourth_der_not_nan) * self.LIMIT_STD
+        std_fourth_der_not_nan = np.nanstd(fourth_der_not_nan) * settings.LIMIT_STD
         indexes = find_peaks(abs(fourth_der_not_nan), height=std_fourth_der_not_nan)[0]
         indexes = np.array(indexes)
 
@@ -249,7 +227,7 @@ class CycleSlip:
             pos_before = np.array(pos_before).flatten().tolist()
             indexes_before.append(pos_before[0])
 
-        if self.plot_it:
+        if settings.plot_it:
             if len(indexes) != 0:
                 Utils.plot_graphs(rtec_nan, std_fourth_der_not_nan, fourth_der_not_nan, indexes_before, prn)
 
@@ -260,20 +238,24 @@ class CycleSlip:
         As a result of the detection of inconsistencies, this method compensate the irregularities on L1 and L2
         observations, directly at the rinex (obs variable)
 
+        :param l1: L1 measures (with NaN values)
+        :param l2: L2 measures (with NaN values)
+        :param c1: C1 measures (with NaN values)
+        :param p2: P2 measures (with NaN values)
         :param rtec_not_nan: relative TEC (no NaNs)
         :param prn: The respective PRN
         :param mlwc: Not NaN MLWC factor
-        :param f1:
-        :param factor_1:
-        :param factor_2:
+        :param f1: F1 frequency (either GPS or GLONASS)
+        :param f2: F2 frequency (either GPS or GLONASS)
+        :param factor_1: first factor of calculus (either GPS or GLONASS)
+        :param factor_2: second factor of calculus (either GPS or GLONASS)
         :param index: The point of inconsistence (array with no NaN values)
-        :param index_nan: The point of inconsistence (array with NaN values)
         :return: The corrected observation file and the respective relative TEC
         """
         diff_rtec = rtec[index] - rtec[index-1]
         diff_mwlc = mwlc[index] - mwlc[index-1]
 
-        var_1 = diff_mwlc * self.C
+        var_1 = diff_mwlc * settings.C
         var_2 = var_1 / f1
         diff_2 = round((diff_rtec - var_2) * factor_2)
         diff_1 = diff_2 + round(diff_mwlc)
@@ -281,7 +263,7 @@ class CycleSlip:
         cor_r_1 = l1[index] - diff_1
         cor_r_2 = l2[index] - diff_2
 
-        rtec[index] = (cor_r_1 / f1 - cor_r_2 / f2) * self.C
+        rtec[index] = (cor_r_1 / f1 - cor_r_2 / f2) * settings.C
         mwlc[index] = (cor_r_1 - cor_r_2) - (f1 * c1[index] + f2 * p2[index]) * factor_1
 
         l1[index:len(l1)] -= diff_1
@@ -291,18 +273,23 @@ class CycleSlip:
 
     def _detect_and_correct_cycle_slip(self, obs_time, l1, l2, c1, p2, f1, f2, factor_1, factor_2, prn):
         """
+        Start the variables to check cycle-slip for each PRN presented in rinex files
 
-        :param obs:
-        :param hdr:
-        :param prn:
-        :param year:
-        :param month:
-        :param doy:
-        :return:
+        :param obs_time: The array of all times (already converted to datetimes) regarding the current rinex file
+        :param l1: L1 measures (with NaN values)
+        :param l2: L2 measures (with NaN values)
+        :param c1: C1 measures (with NaN values)
+        :param p2: P2 measures (with NaN values)
+        :param f1: F1 frequency (either GPS or GLONASS)
+        :param f2: F2 frequency (either GPS or GLONASS)
+        :param factor_1: first factor of calculus (either GPS or GLONASS)
+        :param factor_2: second factor of calculus (either GPS or GLONASS)
+        :param prn: The respective PRN
+        :return: The relative TEC base on the differences between L1 and L2 (rtec_nan), with cycle-slip corrections
         """
         j_start = 0
 
-        rtec_nan = ((l1 / f1) - (l2 / f2)) * self.C
+        rtec_nan = ((l1 / f1) - (l2 / f2)) * settings.C
         mwlc_nan = (l1 - l2) - (f1 * c1 + f2 * p2) * factor_1
 
         not_nan_pos = np.where(~np.isnan(rtec_nan))
@@ -317,7 +304,7 @@ class CycleSlip:
 
         logging.info(">>>> Finding discontinuities and correcting cycle-slips (PRN {})...".format(prn))
         for i in range(1, len(not_nan_time)):
-            rtec_nan[i] = ((l1[i] / f1) - (l2[i] / f2)) * self.C
+            rtec_nan[i] = ((l1[i] / f1) - (l2[i] / f2)) * settings.C
             mwlc_nan[i] = (l1[i] - l2[i]) - (f1 * c1[i] + f2 * p2[i]) * factor_1
 
             t1 = not_nan_time[i-1]
@@ -340,10 +327,10 @@ class CycleSlip:
                     add_tec_2 = add_tec_2 + pow(rtec_nan[i-jj] - rtec_nan[i-jj-1], 2)
 
                 p_mean = add_tec / 10
-                p_dev = np.maximum(np.sqrt(add_tec_2 / 10 - pow(p_mean, 2)), self.DIFF_TEC_MAX)
+                p_dev = np.maximum(np.sqrt(add_tec_2 / 10 - pow(p_mean, 2)), settings.DIFF_TEC_MAX)
             else:
                 p_mean = 0
-                p_dev = self.DIFF_TEC_MAX * 2.5
+                p_dev = settings.DIFF_TEC_MAX * 2.5
 
             pmin_tec = p_mean - p_dev * 2.75
             pmax_tec = p_mean + p_dev * 2.75
@@ -356,19 +343,18 @@ class CycleSlip:
 
     def _cycle_slip_analysis(self, hdr, obs, year, month, doy):
         """
-
-        :param hdr:
-        :param obs:
-        :param year:
-        :param month:
-        :param doy:
+        :param hdr: Header of the current rinex
+        :param obs: Measures of the current rinex
+        :param year: Year (YYYY) of the current rinex
+        :param month: Month (mm) of the current rinex
+        :param doy: Julian day (ddd) of the current rinex
         :return:
         """
         prns = obs.sv.values
         obs_time = Utils.array_timestamp_to_datetime(obs.time)
 
         requiried_version = str(hdr.get('version'))
-        cols_var = COLUMNS_IN_RINEX[requiried_version]
+        cols_var = settings.COLUMNS_IN_RINEX[requiried_version]
 
         for prn in prns:
             l1 = np.array(obs[cols_var[prn[0:1]]['L1']].sel(sv=prn).values)
@@ -383,19 +369,19 @@ class CycleSlip:
                 factor_1 = factor_glonass[prn[1:]][2]
                 factor_2 = factor_glonass[prn[1:]][3]
             elif prn[0:1] == 'G':
-                f1 = self.F1
-                f2 = self.F2
-                factor_1 = self.factor_1
-                factor_2 = self.factor_2
+                f1 = settings.F1
+                f2 = settings.F2
+                factor_1 = settings.factor_1
+                factor_2 = settings.factor_2
 
-            rtec_return, l1_new, l2_new = self._detect_and_correct_cycle_slip(obs_time, l1, l2, c1, p2, f1, f2, factor_1, factor_2, prn)
+            rtec_return, l1_new, l2_new = self._detect_and_correct_cycle_slip(obs_time, l1, l2, c1, p2, f1, f2,
+                                                                              factor_1, factor_2, prn)
 
-            # Plotagem dos novos valores
             obs[cols_var[prn[0:1]]['L1']].sel(sv=prn).values = l1
             obs[cols_var[prn[0:1]]['L2']].sel(sv=prn).values = l2
 
-            rtec = ((l1 / f1) - (l2 / f2)) * self.C
-            rtec_new = ((l1_new / f1) - (l2_new / f2)) * self.C
+            rtec = ((l1 / f1) - (l2 / f2)) * settings.C
+            rtec_new = ((l1_new / f1) - (l2_new / f2)) * settings.C
 
             Utils.plot_graphs_2(rtec, rtec_new, rtec_return, prn)
 
@@ -403,7 +389,7 @@ class CycleSlip:
 
     def initialize(self):
         """
-
+        Initialize the process
         :return:
         """
         files = sorted(os.listdir(self.folder))
@@ -422,13 +408,13 @@ class CycleSlip:
             version = hdr.get('version')
             columns_to_be_load = Utils.which_cols_to_load()
 
-            if version >= REQUIRED_VERSION:
-                obs = gr.load(complete_path, meas=columns_to_be_load, use=CONSTELLATIONS)
+            if version >= settings.REQUIRED_VERSION:
+                obs = gr.load(complete_path, meas=columns_to_be_load, use=settings.CONSTELLATIONS)
 
                 year, month, doy = Utils.setup_rinex_name(file)
                 obs = self._cycle_slip_analysis(hdr, obs, year, month, doy)
 
-                # TODO: construir novo rinex e salvar ??
+                # TODO: construir novo rinex e salvar?
             else:
                 logging.info(">>>>>> Rinex version {}. This code comprises the 3.01+ rinex version.".format(version))
                 continue

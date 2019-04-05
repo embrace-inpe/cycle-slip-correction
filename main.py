@@ -9,21 +9,21 @@ import cycle_slip as cs
 
 def main(rinex_folder, rinex_output):
     """
-
-    :param rinex_folder:
-    :param rinex_output:
-    :return:
+    :param rinex_folder: rinex folder: formats 3.01 to 3.03 are accept for while
+    :param rinex_output: rinex output folder, in order to save possibles corrections
+    :return: Analyse and detect cycle-slip per PRN, if so, save new files at the output folder declared
     """
     object_cs = cs.CycleSlip(rinex_folder, rinex_output)
     object_cs.initialize()
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Correct Rinexes (GNSS receiver files) when cycle slip detect ')
+    parser = argparse.ArgumentParser(description='Analyse and detect cycle-slip effects over rinex\'s '
+                                                 '(GNSS receiver files)')
     parser.add_argument('-rinex_folder', action="store", dest='rinex_folder',
-                        help='Rinex folder: formats 2.11, 3.03 and Hatanaka are accept.')
+                        help='Rinex folder: formats 3.01 to 3.03 are accept for while.')
     parser.add_argument('-rinex_output', action="store", dest='rinex_output',
-                        help='Rinex output folder.')
+                        help='Rinex output folder, in order to save possibles corrections.')
     parser.add_argument('-verbose', action="store", dest='verbose', help='Print log of processing.')
     args = parser.parse_args()
 
