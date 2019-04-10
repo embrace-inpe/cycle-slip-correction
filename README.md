@@ -24,7 +24,7 @@ Mônico, J. F. G. et al. **AVALIAÇÃO DE ESTRATÉGIAS DE DETECÇÃO E CORREÇÃ
 #### Contribuidores envolvidos
 ###### Departamento de Ciências Espaciais e Atmosféricas (CEA-II) - INPE
 Dr. Cristiano Max Wrasse (Pesquisador) [_cristiano.wrasse@inpe.br_]  
-Dr. Cosme A. O. Barros [_cosme.figueiredo@inpe.br_]  
+Dr. Cosme A. O. B. Figueiredo [_cosme.figueiredo@inpe.br_]  
 
 ###### Desenvolvimento - EMBRACE/INPE
 Dr. Rodolfo G. Lotte [_rodolfo.lotte@inpe.br_]

@@ -216,6 +216,7 @@ class CycleSlip:
         else:
             logging.info(">>>>>> Discontinuities detected in {} (not NaN) for PRN {}".format(indexes, prn))
 
+        # indexes_before: utilizado apenas para plotar
         indexes_before = []
         for index in indexes:
             element = rtec_no_nan.item(index)
@@ -224,22 +225,22 @@ class CycleSlip:
             indexes_before.append(pos_before[0])
 
         if settings.plot_it:
-            if len(indexes) != 0:
+            if len(indexes_before) != 0:
                 Utils.plot_graphs(rtec_nan, std_fourth_der_not_nan, fourth_der_not_nan, indexes_before, prn)
 
-        return indexes_before
+        return indexes
 
     def _correct(self, l1, l2, c1, p2, rtec, mwlc, f1, f2, factor_1, factor_2, index):
         """
         As a result of the detection of inconsistencies, this method compensate the irregularities on L1 and L2
         observations, directly at the rinex (obs variable)
 
-        :param l1: L1 measures (with NaN values)
-        :param l2: L2 measures (with NaN values)
-        :param c1: C1 measures (with NaN values)
-        :param p2: P2 measures (with NaN values)
+        :param l1: L1 measures (no NaN values)
+        :param l2: L2 measures (no NaN values)
+        :param c1: C1 measures (no NaN values)
+        :param p2: P2 measures (no NaN values)
         :param rtec_not_nan: relative TEC (no NaNs)
-        :param mlwc: Not NaN MLWC factor
+        :param mlwc: No NaN MLWC factor
         :param f1: F1 frequency (either GPS or GLONASS)
         :param f2: F2 frequency (either GPS or GLONASS)
         :param factor_1: first factor of calculus (either GPS or GLONASS)
@@ -290,25 +291,33 @@ class CycleSlip:
         rtec_nan = ((l1 / f1) - (l2 / f2)) * settings.C
         mwlc_nan = (l1 - l2) - (f1 * c1 + f2 * p2) * factor_1
 
-        not_nan_pos = np.where(~np.isnan(rtec_nan))
-        not_nan_pos = np.array(not_nan_pos).flatten().tolist()
-        no_nan_time = [obs_time[x] for x in not_nan_pos]
-
         rtec_no_nan = rtec_nan.copy()
         mwlc_no_nan = mwlc_nan.copy()
         rtec_no_nan = rtec_no_nan[~np.isnan(rtec_no_nan)]
         mwlc_no_nan = mwlc_no_nan[~np.isnan(mwlc_no_nan)]
 
+        nan_pos = np.where(np.isnan(rtec_nan))
+        nan_pos = np.array(nan_pos).flatten().tolist()
+        not_nan_pos = np.where(~np.isnan(rtec_nan))
+        not_nan_pos = np.array(not_nan_pos).flatten().tolist()
+
+        not_nan_pos = np.array(not_nan_pos).flatten().tolist()
+        not_nan_obs_time = [obs_time[x] for x in not_nan_pos]
+        l1_not_nan = [l1[x] for x in not_nan_pos]
+        l2_not_nan = [l2[x] for x in not_nan_pos]
+        c1_not_nan = [c1[x] for x in not_nan_pos]
+        p2_not_nan = [p2[x] for x in not_nan_pos]
+
         logging.info(">>>> Detecting peaks on the 4th order final differences in rTEC...")
         indexes = self._detect(rtec_nan, rtec_no_nan, prn)
 
         logging.info(">>>> Finding discontinuities and correcting cycle-slips (PRN {})...".format(prn))
-        for i in range(1, len(no_nan_time)):
-            rtec_no_nan[i] = ((l1[i] / f1) - (l2[i] / f2)) * settings.C
-            mwlc_no_nan[i] = (l1[i] - l2[i]) - (f1 * c1[i] + f2 * p2[i]) * factor_1
+        for i in range(1, len(not_nan_obs_time)):
+            rtec_no_nan[i] = ((l1_not_nan[i] / f1) - (l2_not_nan[i] / f2)) * settings.C
+            mwlc_no_nan[i] = (l1_not_nan[i] - l2_not_nan[i]) - (f1 * c1_not_nan[i] + f2 * p2_not_nan[i]) * factor_1
 
-            t1 = no_nan_time[i-1]
-            t2 = no_nan_time[i]
+            t1 = not_nan_obs_time[i-1]
+            t2 = not_nan_obs_time[i]
 
             if t2 - t1 > datetime.timedelta(minutes=15):
                 j_start = i
@@ -316,16 +325,17 @@ class CycleSlip:
 
             if i in indexes:
                 logging.info(">>>>>> Indexes match ({}): correcting cycle-slips...".format(i, prn))
-                rtec_no_nan, l1, l2 = self._correct(l1, l2, c1, p2, rtec_no_nan, mwlc_no_nan,
-                                                     f1, f2, factor_1, factor_2, i)
+                rtec_no_nan, l1_not_nan, l2_not_nan = self._correct(l1_not_nan, l2_not_nan, c1_not_nan, p2_not_nan,
+                                                                    rtec_no_nan, mwlc_no_nan, f1, f2,
+                                                                    factor_1, factor_2, i)
 
             if i - j_start + 1 >= 12:
                 add_tec = 0
                 add_tec_2 = 0
 
                 for jj in range(1, 10):
-                    add_tec = add_tec + rtec_nan[i-jj] - rtec_nan[i-jj-1]
-                    add_tec_2 = add_tec_2 + pow(rtec_nan[i-jj] - rtec_nan[i-jj-1], 2)
+                    add_tec = add_tec + rtec_no_nan[i-jj] - rtec_no_nan[i-jj-1]
+                    add_tec_2 = add_tec_2 + pow(rtec_no_nan[i-jj] - rtec_no_nan[i-jj-1], 2)
 
                 p_mean = add_tec / 10
                 p_dev = np.maximum(np.sqrt(add_tec_2 / 10 - pow(p_mean, 2)), settings.DIFF_TEC_MAX)
@@ -338,18 +348,15 @@ class CycleSlip:
             diff_rtec = rtec_no_nan[i] - rtec_no_nan[i-1]
 
             if not pmin_tec < diff_rtec and diff_rtec <= pmax_tec:
-                rtec_no_nan, l1, l2 = self._correct(l1, l2, c1, p2, rtec_no_nan, mwlc_no_nan,
-                                                     f1, f2, factor_1, factor_2, i)
+                rtec_no_nan, l1_not_nan, l2_not_nan = self._correct(l1_not_nan, l2_not_nan, c1_not_nan, p2_not_nan,
+                                                                    rtec_no_nan, mwlc_no_nan, f1, f2,
+                                                                    factor_1, factor_2, i)
 
-        nan_pos = np.where(np.isnan(rtec_nan))
-        np_zeros = np.zeros(len(nan_pos))
-        l1 = np.concatenate((l1, np_zeros), axis=0)
-        l2 = np.concatenate((l2, np_zeros), axis=0)
+        # np_zeros = np.zeros(len(nan_pos))
+        # rtec_no_nan = np.concatenate((rtec_no_nan, np_zeros), axis=0)
+        # rtec_no_nan[nan_pos] = np.nan
 
-        l1[nan_pos] = np.nan
-        l2[nan_pos] = np.nan
-
-        return l1, l2
+        return rtec_no_nan
 
     def _cycle_slip_analysis(self, hdr, obs, year, month, doy):
         """
@@ -366,17 +373,11 @@ class CycleSlip:
         requiried_version = str(hdr.get('version'))
         cols_var = settings.COLUMNS_IN_RINEX[requiried_version]
 
-        l1 = obs['R']['L1']
-        l2 = obs['R']['L2']
-        c1 = obs['R']['C1']
-        p2 = obs['R']['P1']
-
         for prn in prns:
-            # TODO: carregar uma única vez, ao inves de por prn
-            l1 = np.array(obs[cols_var[prn[0:1]]['L1']].sel(sv=prn).dropna(dim='time', how='all').values)
-            l2 = np.array(obs[cols_var[prn[0:1]]['L2']].sel(sv=prn).dropna(dim='time', how='all').values)
-            c1 = np.array(obs[cols_var[prn[0:1]]['C1']].sel(sv=prn).dropna(dim='time', how='all').values)
-            p2 = np.array(obs[cols_var[prn[0:1]]['P2']].sel(sv=prn).dropna(dim='time', how='all').values)
+            l1 = np.array(obs[cols_var[prn[0:1]]['L1']].sel(sv=prn).values)
+            l2 = np.array(obs[cols_var[prn[0:1]]['L2']].sel(sv=prn).values)
+            c1 = np.array(obs[cols_var[prn[0:1]]['C1']].sel(sv=prn).values)
+            p2 = np.array(obs[cols_var[prn[0:1]]['P2']].sel(sv=prn).values)
 
             if prn[0:1] == 'R':
                 factor_glonass = self._prepare_factor(hdr, year, month, doy)
@@ -390,16 +391,12 @@ class CycleSlip:
                 factor_1 = settings.factor_1
                 factor_2 = settings.factor_2
 
-            l1_new, l2_new = self._detect_and_correct_cycle_slip(obs_time, l1, l2, c1, p2,
+            rtec_corrected = self._detect_and_correct_cycle_slip(obs_time, l1, l2, c1, p2,
                                                                  f1, f2, factor_1, factor_2, prn)
 
-            # obs[cols_var[prn[0:1]]['L1']].sel(sv=prn).values = l1_new
-            # obs[cols_var[prn[0:1]]['L2']].sel(sv=prn).values = l2_new
-
             rtec = ((l1 / f1) - (l2 / f2)) * settings.C
-            rtec_new = ((l1_new / f1) - (l2_new / f2)) * settings.C
 
-            Utils.plot_graphs_2(rtec, rtec_new, prn)
+            Utils.plot_graphs_2(rtec, rtec_corrected, prn)
 
         return obs
 
