@@ -16,7 +16,7 @@ plot_it = True
 
 REQUIRED_VERSION = 3.01
 
-CONSTELLATIONS = ['G']
+CONSTELLATIONS = ['G', 'R']
 COLUMNS_IN_RINEX = {'3.03': {'G': {'L1': 'L1C', 'L2': 'L2W', 'C1': 'C1C', 'P1': 'C1W', 'P2': 'C2W'},
                              'R': {'L1': 'L1C', 'L2': 'L2C', 'C1': 'C1C', 'P1': 'C1P', 'P2': 'C2P'}
                              },

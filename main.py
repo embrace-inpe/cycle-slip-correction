@@ -7,13 +7,13 @@ from logging import handlers
 import cycle_slip as cs
 
 
-def main(rinex_folder, rinex_output):
+def main(rinex_folder):
     """
     :param rinex_folder: rinex folder: formats 3.01 to 3.03 are accept for while
     :param rinex_output: rinex output folder, in order to save possibles corrections
     :return: Analyse and detect cycle-slip per PRN, if so, save new files at the output folder declared
     """
-    object_cs = cs.CycleSlip(rinex_folder, rinex_output)
+    object_cs = cs.CycleSlip(rinex_folder)
     object_cs.initialize()
 
 
@@ -22,8 +22,8 @@ if __name__ == "__main__":
                                                  '(GNSS receiver files)')
     parser.add_argument('-rinex_folder', action="store", dest='rinex_folder',
                         help='Rinex folder: formats 3.01 to 3.03 are accept for while.')
-    parser.add_argument('-rinex_output', action="store", dest='rinex_output',
-                        help='Rinex output folder, in order to save possibles corrections.')
+    # parser.add_argument('-rinex_output', action="store", dest='rinex_output',
+    #                     help='Rinex output folder, in order to save possibles corrections.')
     parser.add_argument('-verbose', action="store", dest='verbose', help='Print log of processing.')
     args = parser.parse_args()
 
@@ -44,4 +44,4 @@ if __name__ == "__main__":
     else:
         logging.basicConfig(format="%(levelname)s: %(message)s")
 
-    main(args.rinex_folder, args.rinex_output)
+    main(args.rinex_folder)

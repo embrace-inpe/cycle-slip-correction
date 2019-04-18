@@ -16,6 +16,8 @@ array_inteiro_not_nan = array_inteiro[~np.isnan(array_inteiro)]
 
 print(array_inteiro)
 
+
+
 valid_pos = np.where(~np.isnan(array_inteiro))
 valid_pos = np.array(valid_pos).flatten().tolist()
 
@@ -34,12 +36,12 @@ nan_pos = np.array(nan_pos).flatten().tolist()
 #     pos_before = np.array(pos_before).flatten().tolist()
 #     indexes_before.append(pos_before[0])
 
-np_zeros = np.zeros(len(nan_pos))
-array_inteiro_not_nan = np.concatenate((array_inteiro_not_nan, np_zeros), axis=0)
-
-
-array_inteiro_not_nan[nan_pos] = np.nan
-print(nan_pos, array_inteiro_not_nan)
+# np_zeros = np.zeros(len(nan_pos))
+# array_inteiro_not_nan = np.concatenate((array_inteiro_not_nan, np_zeros), axis=0)
+# nan_pos = tuple((item, np.nan) for item in nan_pos)
+# print(nan_pos)
+array_inteiro_not_nan = np.insert(array_inteiro_not_nan, nan_pos, np.nan)
+print(array_inteiro_not_nan)
 
 # fig, axs = plt.subplots(3, 1)
 #

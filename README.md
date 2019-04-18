@@ -10,7 +10,7 @@ entre o satélite e o receptor. É um assunto amplamente discutido por vários a
 ser considerados no processo de ajustamento para se possa obter uma correta resolução das ambigüidades da fase, e conseqüentemente um posicionamento com
 alta acurácia, alcançando poucos milímetros. 
 
-Em linhas de base curtas, o posicionamento relativo com receptores de apenas uma freqüência (portadora L1 e código C/A) tem sido uma estratégia muito
+Em linhas de base curtas, o posicionamento relativo com receptores de apenas uma frequência (portadora L1 e código C/A) tem sido uma estratégia muito
 utilizada para atenuar os erros comuns às estações envolvidas. Porém, o multicaminho e as perdas de ciclos não são reduzidos no posicionamento relativo,
 pois dependem de condições particulares de cada estação. Portanto, esses tipos de erros devem receber tratamento específico. Neste artigo os esforços serão
 direcionados para o tratamento das perdas de ciclos.
@@ -18,6 +18,14 @@ direcionados para o tratamento das perdas de ciclos.
 [...]
 
 Mônico, J. F. G. et al. **AVALIAÇÃO DE ESTRATÉGIAS DE DETECÇÃO E CORREÇÃO DE PERDAS DE CICLOS NA PORTADORA GPS L1**. Bol. Ciênc. Geod., sec. Artigos, Curitiba, v. 15, no 2, p.178-193, abr-jun, 2009.
+
+Exemplo de detecção realizada pelo algoritmo:
+
+![Exemplo de detecção realizada pelo algoritmo](fig-1.png)
+
+Gráficos do PRN G01, antes e depois da correção:
+
+![Gráficos do PRN G01, antes e depois da correção](fig-2.png)
 
 ***
 
@@ -27,7 +35,9 @@ Dr. Cristiano Max Wrasse (Pesquisador) [_cristiano.wrasse@inpe.br_]
 Dr. Cosme A. O. B. Figueiredo [_cosme.figueiredo@inpe.br_]  
 
 ###### Desenvolvimento - EMBRACE/INPE
-Dr. Rodolfo G. Lotte [_rodolfo.lotte@inpe.br_]
+Dr. Rodolfo G. Lotte [_rodolfo.lotte@inpe.br_]  
+Silvio Leite [silvio.leite@inpe.br]  
+MSc. David G. M. França [david.franca@inpe.br]  
 
 ***
 
@@ -84,10 +94,10 @@ antidas), constelações a serem verificadas `CONSTELLATIONS`, por exemplo `G` e
 #### 5. Execução do programa
 Com a `.venv` ativa, a chamada do programa deve ser feita através do script `main.py`. O parâmetro `-rinex_folder` 
 descreve o diretório contendo os arquivos `RINEX` que serão analisados e, possivelmente, corrigidos. Um segundo 
-parâmetro, é também oferecido `-rinex_output`, que indica a pasta onde serão salvos as possíveis correções. 
-Por fim, `-verbose` (`True` ou `False`) imprime o status do programa em tempo de execução, conforme o exemplo:
+parâmetro, é também oferecido `-verbose` (`True` ou `False`), que imprime o status do programa em tempo de execução, 
+conforme o exemplo:
 ```console
-$ python main.py -rinex_folder /home/user/embrace/tec/rinex/ -rinex_output /home/user/embrace/tec/rinex/correction/ -verbose True
+$ python main.py -rinex_folder /home/user/embrace/tec/rinex/ -verbose True
 ```
 Se tudo correr bem, a saída do programa deve imprimir gradualmente, mensagens similares ao exemplo abaixo:
 ```console

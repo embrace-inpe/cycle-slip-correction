@@ -161,9 +161,9 @@ class CycleSlip:
                 End
             End
     """
-    def __init__(self, folder, output_folder):
+    def __init__(self, folder):
         self.folder = folder
-        self.output_folder = output_folder
+        # self.output_folder = output_folder
 
     def _prepare_factor(self, hdr, year, day, month):
         """
@@ -352,6 +352,7 @@ class CycleSlip:
                                                                     rtec_no_nan, mwlc_no_nan, f1, f2,
                                                                     factor_1, factor_2, i)
 
+        # Insert NaN values again (?)
         # np_zeros = np.zeros(len(nan_pos))
         # rtec_no_nan = np.concatenate((rtec_no_nan, np_zeros), axis=0)
         # rtec_no_nan[nan_pos] = np.nan
@@ -413,7 +414,6 @@ class CycleSlip:
             start = time.perf_counter()
 
             complete_path = os.path.join(self.folder, file)
-            complete_path_out = os.path.join(self.output_folder, file)
 
             logging.info(">>>> Reading rinex: " + file)
             hdr = gr.rinexheader(complete_path)
@@ -426,8 +426,6 @@ class CycleSlip:
 
                 year, month, doy = Utils.setup_rinex_name(file)
                 obs = self._cycle_slip_analysis(hdr, obs, year, month, doy)
-
-                # TODO: construir novo rinex e salvar?
             else:
                 logging.info(">>>>>> Rinex version {}. This code comprises the 3.01+ rinex version.".format(version))
                 continue
