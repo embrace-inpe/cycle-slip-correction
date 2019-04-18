@@ -21,11 +21,11 @@ Mônico, J. F. G. et al. **AVALIAÇÃO DE ESTRATÉGIAS DE DETECÇÃO E CORREÇÃ
 
 Exemplo de detecção realizada pelo algoritmo:
 
-![Exemplo de detecção realizada pelo algoritmo](fig-1.png)
+![Exemplo de detecção realizada pelo algoritmo](fig-2.png)
 
 Gráficos do PRN G01, antes e depois da correção:
 
-![Gráficos do PRN G01, antes e depois da correção](fig-2.png)
+![Gráficos do PRN G01, antes e depois da correção](fig-1.png)
 
 ***
 
