@@ -352,12 +352,13 @@ class CycleSlip:
                                                                     rtec_no_nan, mwlc_no_nan, f1, f2,
                                                                     factor_1, factor_2, i)
 
-        # Insert NaN values again (?)
-        # np_zeros = np.zeros(len(nan_pos))
-        # rtec_no_nan = np.concatenate((rtec_no_nan, np_zeros), axis=0)
-        # rtec_no_nan[nan_pos] = np.nan
+        for i in range(len(nan_pos)):
+            nan_pos[i] -= i
 
-        return rtec_no_nan
+        rtec_nan = np.insert(rtec_no_nan, nan_pos, np.nan)
+        rtec_nan = rtec_nan.tolist()
+
+        return rtec_nan
 
     def _cycle_slip_analysis(self, hdr, obs, year, month, doy):
         """
